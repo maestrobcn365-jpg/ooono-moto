@@ -9,7 +9,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>OOONO Moto CAT Pro</title>
 
-<link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;OOONO Moto CAT&quot;,&quot;short_name&quot;:&quot;OOONO Moto&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#000000&quot;,&quot;theme_color&quot;:&quot;#000000&quot;,&quot;orientation&quot;:&quot;portrait&quot;}">
+<!-- MANIFIESTO PWA PARA INSTALAR COMO APP NATIVA -->
+<link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;OOONO Moto CAT Pro&quot;,&quot;short_name&quot;:&quot;OOONO Moto&quot;,&quot;start_url&quot;:&quot;./index.html&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#000000&quot;,&quot;theme_color&quot;:&quot;#000000&quot;,&quot;orientation&quot;:&quot;portrait&quot;}">
 
 <style>
   :root {
@@ -229,15 +230,15 @@
       <div id="ledRing" class="led-ring"></div>
       <div id="mainBtn" class="center-button" onclick="handleMainButton()">
         <div id="speedDisplay" class="speed-value">OFF</div>
-        <div id="speedUnit" class="speed-unit">ACTIVAR OOONO</div>
+        <div id="speedUnit" class="speed-unit">ACTIVAR MOTO</div>
         <div id="limitBadge" class="limit-badge">80</div>
       </div>
     </div>
   </div>
 
   <div class="alert-box">
-    <div id="alertTitle" class="alert-title">Sistema en Espera</div>
-    <div id="alertSub" class="alert-sub">Descarga masiva de radares en vivo lista</div>
+    <div id="alertTitle" class="alert-title">App Instalable Lista</div>
+    <div id="alertSub" class="alert-sub">Instálala en la pantalla de inicio para evitar silencios</div>
   </div>
 
   <div class="actions-grid">
@@ -309,18 +310,19 @@ function initAudioEngine() {
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
+  // Mantiene vivo el canal Bluetooth del casco permanentemente
   setInterval(() => {
     if (!systemRunning || !audioCtx) return;
     try {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      gain.gain.value = 0.0008;
+      gain.gain.value = 0.001;
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start();
-      osc.stop(audioCtx.currentTime + 0.04);
+      osc.stop(audioCtx.currentTime + 0.05);
     } catch (e) {}
-  }, 18000);
+  }, 12000);
 }
 
 function playOoonoBeep(pattern = 'RADAR') {
@@ -331,7 +333,7 @@ function playOoonoBeep(pattern = 'RADAR') {
     const gain = audioCtx.createGain();
     osc.type = wave;
     osc.frequency.setValueAtTime(freq, now + start);
-    gain.gain.setValueAtTime(0.9, now + start);
+    gain.gain.setValueAtTime(1.0, now + start);
     gain.gain.exponentialRampToValueAtTime(0.01, now + start + duration);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
@@ -339,12 +341,12 @@ function playOoonoBeep(pattern = 'RADAR') {
     osc.stop(now + start + duration);
   };
   if (pattern === 'RADAR') {
-    tone(2450, 0, 0.13); tone(2450, 0.18, 0.13); tone(2850, 0.40, 0.22);
+    tone(2500, 0, 0.14); tone(2500, 0.18, 0.14); tone(2900, 0.40, 0.25);
   } else if (pattern === 'OVERSPEED') {
-    tone(3100, 0, 0.11, 'square'); tone(2100, 0.13, 0.11, 'square');
-    tone(3100, 0.26, 0.11, 'square'); tone(2100, 0.39, 0.16, 'square');
+    tone(3200, 0, 0.12, 'square'); tone(2200, 0.14, 0.12, 'square');
+    tone(3200, 0.28, 0.12, 'square'); tone(2200, 0.42, 0.16, 'square');
   } else if (pattern === 'HELI') {
-    tone(1100, 0, 0.14); tone(1750, 0.16, 0.14); tone(2650, 0.32, 0.26);
+    tone(1200, 0, 0.15); tone(1800, 0.18, 0.15); tone(2700, 0.35, 0.28);
   }
 }
 
@@ -355,10 +357,10 @@ function speakAlert(text, beepPattern = 'RADAR') {
       window.speechSynthesis.cancel();
       const msg = new SpeechSynthesisUtterance(text);
       msg.lang = 'es-ES';
-      msg.rate = 1.08; msg.pitch = 1.0; msg.volume = 1.0;
+      msg.rate = 1.1; msg.pitch = 1.0; msg.volume = 1.0;
       window.speechSynthesis.speak(msg);
     }
-  }, 600);
+  }, 650);
 }
 
 async function handleMainButton() {
@@ -374,17 +376,17 @@ async function startSystem() {
   systemRunning = true;
 
   document.getElementById('statusDot').className = 'dot active';
-  document.getElementById('statusText').innerText = 'Buscando Radares en Vivo...';
+  document.getElementById('statusText').innerText = 'App Activa (Audio + GPS)';
   document.getElementById('speedDisplay').innerText = '0';
   document.getElementById('speedUnit').innerText = 'KM/H';
-  document.getElementById('alertTitle').innerText = 'Descargando Red Masiva';
-  document.getElementById('alertSub').innerText = 'Conectando con Blitzer.de y OSM...';
+  document.getElementById('alertTitle').innerText = 'Buscando Radares';
+  document.getElementById('alertSub').innerText = 'Conectado a Blitzer.de y OSM en vivo';
 
   if ('wakeLock' in navigator) {
     try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
   }
 
-  speakAlert('OOONO Moto activo. Escaneando radares.', 'RADAR');
+  speakAlert('OOONO Moto conectado. Buena ruta.', 'RADAR');
 
   if ('geolocation' in navigator) {
     navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -449,7 +451,6 @@ async function fetchWithFallbackProxy(targetUrl) {
 }
 
 async function fetchLiveRadars(lat, lon) {
-  // Ampliamos el radio a 0.25 (~28 km a la redonda) para capturar cientos de puntos en Catalunya
   const delta = 0.25;
   const minLat = (lat - delta).toFixed(5);
   const maxLat = (lat + delta).toFixed(5);
@@ -461,7 +462,6 @@ async function fetchLiveRadars(lat, lon) {
 
   let combined = [...CATALUNYA_STATIC_RADARS, ...customReports];
 
-  // A) Blitzer.de (Radares móviles, controles y fijos masivos)
   const blitzerUrl = `https://cdn2.atudo.net/api/4.0/pois.php?type=0,1,2,3,4,5,6,101,102,103,104,105,106,107&box=${minLat},${minLon},${maxLat},${maxLon}`;
   const blitzerData = await fetchWithFallbackProxy(blitzerUrl);
   if (blitzerData && blitzerData.pois) {
@@ -478,7 +478,6 @@ async function fetchLiveRadars(lat, lon) {
     });
   }
 
-  // B) OpenStreetMap Overpass (Todos los radares de velocidad mapeados en la zona)
   try {
     const overpassQuery = `[out:json][timeout:10];node["highway"="speed_camera"](${minLat},${minLon},${maxLat},${maxLon});out body;`;
     const osmRes = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`);
@@ -497,7 +496,6 @@ async function fetchLiveRadars(lat, lon) {
     }
   } catch (e) {}
 
-  // Filtrar duplicados cercanos
   const deduplicated = [];
   combined.forEach(item => {
     const exists = deduplicated.some(existing => calcDistance(item.lat, item.lon, existing.lat, existing.lon) < 40);
