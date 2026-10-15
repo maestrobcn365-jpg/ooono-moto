@@ -9,7 +9,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>OOONO Moto CAT Pro</title>
 
-<!-- Manifiesto PWA integrado para instalar como App Nativa desde GitHub Pages -->
 <link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;OOONO Moto CAT&quot;,&quot;short_name&quot;:&quot;OOONO Moto&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#000000&quot;,&quot;theme_color&quot;:&quot;#000000&quot;,&quot;orientation&quot;:&quot;portrait&quot;}">
 
 <style>
@@ -28,8 +27,8 @@
   html, body {
     width: 100%;
     height: 100%;
-    height: 100dvh; /* Descuenta automáticamente las barras del navegador Android */
-    background-color: #000000; /* Negro puro AMOLED */
+    height: 100dvh;
+    background-color: #000000;
     color: #ffffff;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow: hidden;
@@ -43,7 +42,6 @@
     gap: 6px;
   }
 
-  /* 1. BARRA SUPERIOR */
   .top-bar {
     width: 100%;
     flex-shrink: 0;
@@ -71,7 +69,6 @@
   .dot.active { background: #10b981; box-shadow: 0 0 8px #10b981; }
   .dot.warn { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
 
-  /* 2. ANILLO Y BOTÓN CENTRAL OOONO (Auto-escalable) */
   .ooono-wrapper {
     flex: 1;
     display: flex;
@@ -163,7 +160,6 @@
     font-weight: 900;
   }
 
-  /* 3. PANEL DE ALERTA E INFORMACIÓN DE RUTA */
   .alert-box {
     width: 100%;
     flex-shrink: 0;
@@ -192,7 +188,6 @@
     max-width: 95%;
   }
 
-  /* 4. BOTONERA INFERIOR PARA GUANTES DE MOTO */
   .actions-grid {
     width: 100%;
     flex-shrink: 0;
@@ -221,16 +216,14 @@
 </head>
 <body>
 
-  <!-- 1. BARRA SUPERIOR -->
   <div class="top-bar">
     <div class="status-pill">
       <div id="statusDot" class="dot"></div>
       <span id="statusText">Toca el centro para iniciar</span>
     </div>
-    <div id="dbCounter" style="color:#9ca3af; font-weight:600;">📍 40 | 🚁 0</div>
+    <div id="dbCounter" style="color:#9ca3af; font-weight:600;">📍 0 | 🚁 0</div>
   </div>
 
-  <!-- 2. CÍRCULO CENTRAL OOONO -->
   <div class="ooono-wrapper">
     <div class="ooono-container">
       <div id="ledRing" class="led-ring"></div>
@@ -242,13 +235,11 @@
     </div>
   </div>
 
-  <!-- 3. CAJA DE AVISOS -->
   <div class="alert-box">
     <div id="alertTitle" class="alert-title">Sistema en Espera</div>
-    <div id="alertSub" class="alert-sub">Audio Bluetooth + GPS + Cono de Rumbo Inteligente</div>
+    <div id="alertSub" class="alert-sub">Descarga masiva de radares en vivo lista</div>
   </div>
 
-  <!-- 4. BOTONES DE ACCIÓN RÁPIDA -->
   <div class="actions-grid">
     <button class="btn btn-danger" onclick="reportIncident('MÓVIL', 'Radar Móvil')">
       🚨 Reportar Móvil
@@ -265,67 +256,39 @@
   </div>
 
 <script>
-/**
- * ============================================================================
- * 1. BASE DE DATOS OFICIAL INTEGRADA: BARCELONA CIUDAD, RONDAS Y CATALUNYA (SCT)
- * Funciona al 100% incluso sin internet o dentro de túneles.
- * ============================================================================
- */
 const CATALUNYA_STATIC_RADARS = [
-  // Túneles y Radares de Tramo Barcelona
   { id: 'bcn-1', lat: 41.4162, lon: 2.1592, vmax: 60, type: 'TRAMO', name: 'Túnel de la Rovira' },
-  { id: 'bcn-2', lat: 41.3789, lon: 2.1281, vmax: 60, type: 'TRAMO', name: 'Túnel de Badal (Ronda del Mig)' },
+  { id: 'bcn-2', lat: 41.3789, lon: 2.1281, vmax: 60, type: 'TRAMO', name: 'Túnel de Badal' },
   { id: 'bcn-3', lat: 41.4038, lon: 2.1872, vmax: 50, type: 'TRAMO', name: 'Túnel de les Glòries' },
-  { id: 'bcn-4', lat: 41.4428, lon: 2.1725, vmax: 80, type: 'TRAMO', name: 'Ronda de Dalt (Karl Marx - Trinitat)' },
-  // Ronda de Dalt (B-20)
-  { id: 'bcn-5', lat: 41.4344, lon: 2.1520, vmax: 80, type: 'FIJO', name: 'Ronda de Dalt B-20 km 12 (Horta)' },
-  { id: 'bcn-6', lat: 41.4021, lon: 2.1042, vmax: 80, type: 'FIJO', name: 'Ronda de Dalt B-20 km 4.8 (Esplugues)' },
-  { id: 'bcn-7', lat: 41.4465, lon: 2.1882, vmax: 80, type: 'FIJO', name: 'Ronda de Dalt B-20 km 14.3 (Trinitat)' },
-  // Ronda Litoral (B-10)
-  { id: 'bcn-8', lat: 41.3665, lon: 2.1770, vmax: 80, type: 'FIJO', name: 'Ronda Litoral B-10 km 10 (Mirador/Colom)' },
-  { id: 'bcn-9', lat: 41.3910, lon: 2.2035, vmax: 80, type: 'FIJO', name: 'Ronda Litoral B-10 km 13 (Poblenou)' },
-  { id: 'bcn-10', lat: 41.3485, lon: 2.1420, vmax: 80, type: 'FIJO', name: 'Ronda Litoral B-10 km 7 (Zona Franca)' },
-  // Red Urbana Barcelona Ciudad (50 km/h y 30 km/h Escolares/Eixample)
-  { id: 'bcn-11', lat: 41.3842, lon: 2.1158, vmax: 50, type: 'FIJO', name: 'Av. Diagonal 671 (Palau Reial)' },
-  { id: 'bcn-12', lat: 41.3914, lon: 2.1384, vmax: 50, type: 'FIJO', name: 'Av. Diagonal 563 (L\'Illa)' },
-  { id: 'bcn-13', lat: 41.4062, lon: 2.1985, vmax: 50, type: 'FIJO', name: 'Av. Diagonal 110 (Sant Martí)' },
-  { id: 'bcn-14', lat: 41.4045, lon: 2.1895, vmax: 50, type: 'FIJO', name: 'Gran Via 304 (Glòries)' },
-  { id: 'bcn-15', lat: 41.3752, lon: 2.1501, vmax: 50, type: 'FIJO', name: 'Gran Via 329 (Plaça Espanya)' },
-  { id: 'bcn-16', lat: 41.3853, lon: 2.1558, vmax: 50, type: 'FIJO', name: 'Carrer Aragó 174' },
-  { id: 'bcn-17', lat: 41.4052, lon: 2.1795, vmax: 50, type: 'FIJO', name: 'Carrer Aragó 499' },
-  { id: 'bcn-18', lat: 41.3976, lon: 2.1524, vmax: 50, type: 'FIJO', name: 'Carrer Balmes 201' },
-  { id: 'bcn-19', lat: 41.4071, lon: 2.1422, vmax: 50, type: 'FIJO', name: 'Carrer Balmes 371 (Ronda Gral. Mitre)' },
-  { id: 'bcn-20', lat: 41.3821, lon: 2.1432, vmax: 30, type: 'FIJO', name: 'Carrer Entença 155 (Zona 30)' },
-  { id: 'bcn-21', lat: 41.3895, lon: 2.1481, vmax: 30, type: 'FIJO', name: 'Carrer Muntaner 158 (Zona 30)' },
-  { id: 'bcn-22', lat: 41.3855, lon: 2.1389, vmax: 30, type: 'FIJO', name: 'Carrer Numància 163' },
-  { id: 'bcn-23', lat: 41.4018, lon: 2.1678, vmax: 50, type: 'FIJO', name: 'Carrer Mallorca 351' },
-  { id: 'bcn-24', lat: 41.4285, lon: 2.1865, vmax: 50, type: 'FIJO', name: 'Av. Meridiana 408' },
-  { id: 'bcn-25', lat: 41.3742, lon: 2.1685, vmax: 50, type: 'FIJO', name: 'Av. Paral·lel 112' },
-  // Autovía A-2, Anoia, Baix Llobregat y Piera / Montserrat
-  { id: 'cat-1', lat: 41.5432, lon: 1.8721, vmax: 100, type: 'FIJO', name: 'A-2 Esparreguera / Collbató' },
-  { id: 'cat-2', lat: 41.5680, lon: 1.7850, vmax: 100, type: 'FIJO', name: 'A-2 el Bruc (Bajada Montserrat)' },
-  { id: 'cat-3', lat: 41.5810, lon: 1.6320, vmax: 120, type: 'FIJO', name: 'A-2 Igualada / Jorba' },
-  { id: 'cat-4', lat: 41.4712, lon: 1.9245, vmax: 100, type: 'FIJO', name: 'A-2 Sant Andreu de la Barca' },
-  { id: 'cat-5', lat: 41.3522, lon: 2.0415, vmax: 80, type: 'FIJO', name: 'A-2 Cornellà / Sant Boi' },
-  { id: 'cat-6', lat: 41.5120, lon: 1.7890, vmax: 80, type: 'FIJO', name: 'B-224 Sant Esteve Sesrovires / Piera' },
-  { id: 'cat-7', lat: 41.4985, lon: 1.8520, vmax: 70, type: 'FIJO', name: 'B-224 Martorell / Masquefa' },
-  // AP-7, C-31, C-32, C-58, C-16 y C-17
-  { id: 'cat-8', lat: 41.2825, lon: 1.9810, vmax: 80, type: 'TRAMO', name: 'C-31 Autovía Castelldefels' },
-  { id: 'cat-9', lat: 41.3145, lon: 2.0125, vmax: 100, type: 'FIJO', name: 'C-32 Gavà / Viladecans' },
-  { id: 'cat-10', lat: 41.5180, lon: 2.4120, vmax: 100, type: 'FIJO', name: 'C-32 Mataró / Cabrera de Mar' },
-  { id: 'cat-11', lat: 41.4621, lon: 2.1812, vmax: 80, type: 'FIJO', name: 'C-58 Entrada Trinitat' },
-  { id: 'cat-12', lat: 41.5240, lon: 2.1180, vmax: 100, type: 'FIJO', name: 'C-58 Badia / Sabadell' },
-  { id: 'cat-13', lat: 41.4789, lon: 2.0412, vmax: 120, type: 'FIJO', name: 'AP-7 Rubí / Castellbisbal' },
-  { id: 'cat-14', lat: 41.5420, lon: 2.2150, vmax: 120, type: 'FIJO', name: 'AP-7 Santa Perpètua / Mollet' },
-  { id: 'cat-15', lat: 41.5640, lon: 2.2610, vmax: 80, type: 'FIJO', name: 'C-17 Parets / Montmeló' }
+  { id: 'bcn-4', lat: 41.4428, lon: 2.1725, vmax: 80, type: 'TRAMO', name: 'Ronda de Dalt (Karl Marx)' },
+  { id: 'bcn-5', lat: 41.4344, lon: 2.1520, vmax: 80, type: 'FIJO', name: 'Ronda de Dalt km 12' },
+  { id: 'bcn-6', lat: 41.4021, lon: 2.1042, vmax: 80, type: 'FIJO', name: 'Ronda de Dalt Esplugues' },
+  { id: 'bcn-7', lat: 41.3665, lon: 2.1770, vmax: 80, type: 'FIJO', name: 'Ronda Litoral Mirador' },
+  { id: 'bcn-8', lat: 41.3910, lon: 2.2035, vmax: 80, type: 'FIJO', name: 'Ronda Litoral Poblenou' },
+  { id: 'bcn-9', lat: 41.3842, lon: 2.1158, vmax: 50, type: 'FIJO', name: 'Av. Diagonal 671' },
+  { id: 'bcn-10', lat: 41.3914, lon: 2.1384, vmax: 50, type: 'FIJO', name: 'Av. Diagonal 563' },
+  { id: 'bcn-11', lat: 41.4045, lon: 2.1895, vmax: 50, type: 'FIJO', name: 'Gran Via / Glòries' },
+  { id: 'bcn-12', lat: 41.3752, lon: 2.1501, vmax: 50, type: 'FIJO', name: 'Gran Via / Espanya' },
+  { id: 'bcn-13', lat: 41.3853, lon: 2.1558, vmax: 50, type: 'FIJO', name: 'Carrer Aragó 174' },
+  { id: 'bcn-14', lat: 41.3976, lon: 2.1524, vmax: 50, type: 'FIJO', name: 'Carrer Balmes 201' },
+  { id: 'bcn-15', lat: 41.3821, lon: 2.1432, vmax: 30, type: 'FIJO', name: 'Carrer Entença' },
+  { id: 'bcn-16', lat: 41.3895, lon: 2.1481, vmax: 30, type: 'FIJO', name: 'Carrer Muntaner' },
+  { id: 'cat-1', lat: 41.5432, lon: 1.8721, vmax: 100, type: 'FIJO', name: 'A-2 Esparreguera' },
+  { id: 'cat-2', lat: 41.5680, lon: 1.7850, vmax: 100, type: 'FIJO', name: 'A-2 el Bruc' },
+  { id: 'cat-3', lat: 41.4712, lon: 1.9245, vmax: 100, type: 'FIJO', name: 'A-2 Sant Andreu' },
+  { id: 'cat-4', lat: 41.3522, lon: 2.0415, vmax: 80, type: 'FIJO', name: 'A-2 Cornellà' },
+  { id: 'cat-5', lat: 41.5120, lon: 1.7890, vmax: 80, type: 'FIJO', name: 'B-224 Piera / Masquefa' },
+  { id: 'cat-6', lat: 41.2825, lon: 1.9810, vmax: 80, type: 'TRAMO', name: 'C-31 Castelldefels' },
+  { id: 'cat-7', lat: 41.3145, lon: 2.0125, vmax: 100, type: 'FIJO', name: 'C-32 Gavà' },
+  { id: 'cat-8', lat: 41.4621, lon: 2.1812, vmax: 80, type: 'FIJO', name: 'C-58 Trinitat' },
+  { id: 'cat-9', lat: 41.4789, lon: 2.0412, vmax: 120, type: 'FIJO', name: 'AP-7 Rubí' }
 ];
 
-// Variables de estado en vivo
 let systemRunning = false;
 let currentSpeed = 0;
 let userLat = 41.3874;
 let userLon = 2.1686;
-let userHeading = null; // Rumbo de la moto en grados (0-360)
+let userHeading = null;
 let prevLat = null;
 let prevLon = null;
 
@@ -333,16 +296,11 @@ let activePois = [...CATALUNYA_STATIC_RADARS];
 let customReports = JSON.parse(localStorage.getItem('ooono_custom_reports') || '[]');
 let activeHelis = [];
 let alertedIds = new Map();
-let prevDistanceMap = new Map(); // Para saber si te estás acercando o ya lo has pasado
+let prevDistanceMap = new Map();
 let audioCtx = null;
 let wakeLock = null;
 let lastFetchCoords = { lat: 0, lon: 0 };
 
-/**
- * ============================================================================
- * 2. MOTOR DE AUDIO BLUETOOTH (Mezcla sobre Spotify y Honda RoadSync)
- * ============================================================================
- */
 function initAudioEngine() {
   if (!audioCtx) {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -351,13 +309,12 @@ function initAudioEngine() {
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
-  // Keep-Alive ultrasónico cada 18s para que el intercomunicador no entre en reposo
   setInterval(() => {
     if (!systemRunning || !audioCtx) return;
     try {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      gain.gain.value = 0.0008; // Inaudible pero mantiene abierto el canal A2DP/HFP
+      gain.gain.value = 0.0008;
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start();
@@ -369,7 +326,6 @@ function initAudioEngine() {
 function playOoonoBeep(pattern = 'RADAR') {
   if (!audioCtx) initAudioEngine();
   const now = audioCtx.currentTime;
-
   const tone = (freq, start, duration, wave = 'sawtooth') => {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -382,23 +338,13 @@ function playOoonoBeep(pattern = 'RADAR') {
     osc.start(now + start);
     osc.stop(now + start + duration);
   };
-
   if (pattern === 'RADAR') {
-    // Doble pitido oficial OOONO
-    tone(2450, 0, 0.13);
-    tone(2450, 0.18, 0.13);
-    tone(2850, 0.40, 0.22);
+    tone(2450, 0, 0.13); tone(2450, 0.18, 0.13); tone(2850, 0.40, 0.22);
   } else if (pattern === 'OVERSPEED') {
-    // Alerta urgente si vas por encima de la velocidad del radar
-    tone(3100, 0, 0.11, 'square');
-    tone(2100, 0.13, 0.11, 'square');
-    tone(3100, 0.26, 0.11, 'square');
-    tone(2100, 0.39, 0.16, 'square');
+    tone(3100, 0, 0.11, 'square'); tone(2100, 0.13, 0.11, 'square');
+    tone(3100, 0.26, 0.11, 'square'); tone(2100, 0.39, 0.16, 'square');
   } else if (pattern === 'HELI') {
-    // Alerta aérea Pegasus / Trànsit
-    tone(1100, 0, 0.14);
-    tone(1750, 0.16, 0.14);
-    tone(2650, 0.32, 0.26);
+    tone(1100, 0, 0.14); tone(1750, 0.16, 0.14); tone(2650, 0.32, 0.26);
   }
 }
 
@@ -409,19 +355,12 @@ function speakAlert(text, beepPattern = 'RADAR') {
       window.speechSynthesis.cancel();
       const msg = new SpeechSynthesisUtterance(text);
       msg.lang = 'es-ES';
-      msg.rate = 1.08;
-      msg.pitch = 1.0;
-      msg.volume = 1.0;
+      msg.rate = 1.08; msg.pitch = 1.0; msg.volume = 1.0;
       window.speechSynthesis.speak(msg);
     }
   }, 600);
 }
 
-/**
- * ============================================================================
- * 3. ARRANQUE DEL SISTEMA Y GPS DE ALTA PRECISIÓN CON CÁLCULO DE RUMBO
- * ============================================================================
- */
 async function handleMainButton() {
   if (!systemRunning) {
     await startSystem();
@@ -435,30 +374,26 @@ async function startSystem() {
   systemRunning = true;
 
   document.getElementById('statusDot').className = 'dot active';
-  document.getElementById('statusText').innerText = 'GPS + Intercom Activo';
+  document.getElementById('statusText').innerText = 'Buscando Radares en Vivo...';
   document.getElementById('speedDisplay').innerText = '0';
   document.getElementById('speedUnit').innerText = 'KM/H';
-  document.getElementById('alertTitle').innerText = 'Escaneando Ruta';
-  document.getElementById('alertSub').innerText = 'Blitzer.de + SCT + Radar Aéreo Pegasus activos';
+  document.getElementById('alertTitle').innerText = 'Descargando Red Masiva';
+  document.getElementById('alertSub').innerText = 'Conectando con Blitzer.de y OSM...';
 
   if ('wakeLock' in navigator) {
     try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
   }
 
-  // Re-adquirir WakeLock si cambias de app y vuelves
-  document.addEventListener('visibilitychange', async () => {
-    if (wakeLock !== null && document.visibilityState === 'visible') {
-      try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
-    }
-  });
-
-  speakAlert('OOONO Moto activado. Ruta vigilada.', 'RADAR');
-
-  // Primera descarga inmediata de radares y helicópteros
-  fetchLiveRadars(userLat, userLon);
-  fetchHelicopters();
+  speakAlert('OOONO Moto activo. Escaneando radares.', 'RADAR');
 
   if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      userLat = pos.coords.latitude;
+      userLon = pos.coords.longitude;
+      await fetchLiveRadars(userLat, userLon);
+      fetchHelicopters();
+    }, () => {}, { enableHighAccuracy: true });
+
     navigator.geolocation.watchPosition(onGpsUpdate, onGpsError, {
       enableHighAccuracy: true,
       maximumAge: 1000,
@@ -475,21 +410,17 @@ function onGpsUpdate(pos) {
   currentSpeed = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
   document.getElementById('speedDisplay').innerText = currentSpeed;
 
-  // Obtener rumbo del chip GPS o calcularlo respecto al punto anterior si nos movemos
   if (pos.coords.heading !== null && !isNaN(pos.coords.heading) && currentSpeed > 5) {
     userHeading = pos.coords.heading;
   } else if (prevLat !== null && calcDistance(prevLat, prevLon, newLat, newLon) > 6) {
     userHeading = calcBearing(prevLat, prevLon, newLat, newLon);
   }
 
-  prevLat = userLat;
-  prevLon = userLon;
-  userLat = newLat;
-  userLon = newLon;
+  prevLat = userLat; prevLon = userLon;
+  userLat = newLat; userLon = newLon;
 
-  // Actualizar bases de datos en directo cada 2 km de avance
   const distFromLastFetch = calcDistance(userLat, userLon, lastFetchCoords.lat, lastFetchCoords.lon);
-  if (distFromLastFetch > 2000) {
+  if (distFromLastFetch > 2500 || lastFetchCoords.lat === 0) {
     lastFetchCoords = { lat: userLat, lon: userLon };
     fetchLiveRadars(userLat, userLon);
     fetchHelicopters();
@@ -500,19 +431,9 @@ function onGpsUpdate(pos) {
 
 function onGpsError(err) {
   document.getElementById('statusDot').className = 'dot warn';
-  if (window.location.protocol === 'content:' || window.location.protocol === 'file:') {
-    document.getElementById('alertTitle').innerText = '⚠️ Súbelo a GitHub Pages';
-    document.getElementById('alertSub').innerText = 'Android bloquea el GPS en archivos locales sueltos.';
-  } else {
-    document.getElementById('alertSub').innerText = 'Buscando satélites GPS...';
-  }
+  document.getElementById('alertSub').innerText = 'Esperando señal GPS...';
 }
 
-/**
- * ============================================================================
- * 4. DESCARGA EN TIEMPO REAL: BLITZER.DE (Doble Proxy) + OPENSTREETMAP
- * ============================================================================
- */
 async function fetchWithFallbackProxy(targetUrl) {
   const proxies = [
     `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
@@ -528,19 +449,19 @@ async function fetchWithFallbackProxy(targetUrl) {
 }
 
 async function fetchLiveRadars(lat, lon) {
-  const delta = 0.12; // ~13 km a la redonda
+  // Ampliamos el radio a 0.25 (~28 km a la redonda) para capturar cientos de puntos en Catalunya
+  const delta = 0.25;
   const minLat = (lat - delta).toFixed(5);
   const maxLat = (lat + delta).toFixed(5);
   const minLon = (lon - delta).toFixed(5);
   const maxLon = (lon + delta).toFixed(5);
 
-  // Limpiar reportes antiguos (> 4 horas)
   const fourHoursAgo = Date.now() - (4 * 3600 * 1000);
   customReports = customReports.filter(r => !r.ts || r.ts > fourHoursAgo);
 
   let combined = [...CATALUNYA_STATIC_RADARS, ...customReports];
 
-  // A) Blitzer.de / Atudo.net (Radares móviles, controles, furgonetas y fijos)
+  // A) Blitzer.de (Radares móviles, controles y fijos masivos)
   const blitzerUrl = `https://cdn2.atudo.net/api/4.0/pois.php?type=0,1,2,3,4,5,6,101,102,103,104,105,106,107&box=${minLat},${minLon},${maxLat},${maxLon}`;
   const blitzerData = await fetchWithFallbackProxy(blitzerUrl);
   if (blitzerData && blitzerData.pois) {
@@ -557,9 +478,9 @@ async function fetchLiveRadars(lat, lon) {
     });
   }
 
-  // B) OpenStreetMap Overpass API en directo
+  // B) OpenStreetMap Overpass (Todos los radares de velocidad mapeados en la zona)
   try {
-    const overpassQuery = `[out:json][timeout:8];node["highway"="speed_camera"](${minLat},${minLon},${maxLat},${maxLon});out body;`;
+    const overpassQuery = `[out:json][timeout:10];node["highway"="speed_camera"](${minLat},${minLon},${maxLat},${maxLon});out body;`;
     const osmRes = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`);
     if (osmRes.ok) {
       const osmData = await osmRes.json();
@@ -570,16 +491,16 @@ async function fetchLiveRadars(lat, lon) {
           lon: el.lon,
           vmax: el.tags && el.tags.maxspeed ? parseInt(el.tags.maxspeed) : 0,
           type: 'FIJO',
-          name: (el.tags && el.tags.name) ? el.tags.name : 'Radar Fijo SCT/OSM'
+          name: (el.tags && el.tags.name) ? el.tags.name : 'Radar Fijo OSM'
         });
       });
     }
   } catch (e) {}
 
-  // Eliminar duplicados que estén a menos de 45 metros entre sí
+  // Filtrar duplicados cercanos
   const deduplicated = [];
   combined.forEach(item => {
-    const exists = deduplicated.some(existing => calcDistance(item.lat, item.lon, existing.lat, existing.lon) < 45);
+    const exists = deduplicated.some(existing => calcDistance(item.lat, item.lon, existing.lat, existing.lon) < 40);
     if (!exists) deduplicated.push(item);
   });
 
@@ -587,15 +508,10 @@ async function fetchLiveRadars(lat, lon) {
   updateCounterUI();
 }
 
-/**
- * ============================================================================
- * 5. ESCÁNER AÉREO ADS-B (Helicópteros Trànsit / Mossos / Pegasus)
- * ============================================================================
- */
 async function fetchHelicopters() {
   if (!systemRunning) return;
   try {
-    const url = `https://api.airplanes.live/v2/point/${userLat.toFixed(4)}/${userLon.toFixed(4)}/15`;
+    const url = `https://api.airplanes.live/v2/point/${userLat.toFixed(4)}/${userLon.toFixed(4)}/25`;
     const res = await fetch(url);
     if (!res.ok) return;
     const data = await res.json();
@@ -609,17 +525,15 @@ async function fetchHelicopters() {
         const callsign = (ac.flight || '').toUpperCase().trim();
         const type = (ac.t || '').toUpperCase().trim();
 
-        const isHeliModel = ['AS55', 'EC35', 'H135', 'EC45', 'B06', 'R44', 'A109', 'EC30'].includes(type);
+        const isHeliModel = ['AS55', 'EC35', 'H135', 'EC45', 'B06', 'R44', 'A109'].includes(type);
         const isPoliceCall = callsign.includes('DGT') || callsign.includes('MOSSOS') || callsign.includes('TRANSIT') || callsign.includes('POL');
         const isSurveillanceFlight = (altMeters > 110 && altMeters < 920 && speedKmh > 35 && speedKmh < 215);
 
         if (isHeliModel || isPoliceCall || isSurveillanceFlight) {
           detected.push({
             id: 'heli-' + ac.hex,
-            lat: ac.lat,
-            lon: ac.lon,
-            alt: Math.round(altMeters),
-            speed: Math.round(speedKmh),
+            lat: ac.lat, lon: ac.lon,
+            alt: Math.round(altMeters), speed: Math.round(speedKmh),
             callsign: callsign || type || 'Vuelo Bajo'
           });
         }
@@ -630,15 +544,8 @@ async function fetchHelicopters() {
   } catch (e) {}
 }
 
-/**
- * ============================================================================
- * 6. MOTOR INTELIGENTE DE PROXIMIDAD Y CONO DE DIRECCIÓN (EVITA FALSAS ALARMAS)
- * ============================================================================
- */
 function checkProximityAlerts() {
-  const now = Date.now();
   const warnDistance = currentSpeed > 75 ? 650 : 380;
-
   let closestAheadRadar = null;
   let minAheadDist = 99999;
 
@@ -647,15 +554,12 @@ function checkProximityAlerts() {
     const prevD = prevDistanceMap.get(poi.id) || d;
     prevDistanceMap.set(poi.id, d);
 
-    // Comprobar si el radar está dentro de nuestro cono frontal de marcha (±55 grados)
     let isAhead = true;
     if (userHeading !== null && currentSpeed > 12 && d > 60) {
       const bearingToPoi = calcBearing(userLat, userLon, poi.lat, poi.lon);
       const angleDiff = Math.abs(((bearingToPoi - userHeading + 540) % 360) - 180);
       isAhead = angleDiff <= 55;
     }
-
-    // Si ya nos estamos alejando claramente después de pasarlo (<150m), callar al instante
     const isMovingAway = (d > prevD + 3) && d < 180;
 
     if (isAhead && !isMovingAway && d < minAheadDist) {
@@ -664,30 +568,23 @@ function checkProximityAlerts() {
     }
   });
 
-  // Revisar Helicópteros (< 4.5 km, sin importar rumbo porque se mueven desde el cielo)
   let closestHeli = null;
   let minHeliDist = 99999;
   activeHelis.forEach(h => {
     const d = calcDistance(userLat, userLon, h.lat, h.lon);
-    if (d < minHeliDist) {
-      minHeliDist = d;
-      closestHeli = h;
-    }
+    if (d < minHeliDist) { minHeliDist = d; closestHeli = h; }
   });
 
   const ring = document.getElementById('ledRing');
   const badge = document.getElementById('limitBadge');
 
-  // 1. ALERTA DE RADAR EN TU DIRECCIÓN
   if (closestAheadRadar && minAheadDist <= warnDistance) {
     const distRounded = Math.max(10, Math.round(minAheadDist / 10) * 10);
     const isOverspeed = closestAheadRadar.vmax > 0 && currentSpeed > (closestAheadRadar.vmax + 2);
 
-    if (closestAheadRadar.type === 'MÓVIL') {
-      ring.className = isOverspeed ? 'led-ring flash-red' : 'led-ring flash-blue';
-    } else {
-      ring.className = isOverspeed ? 'led-ring flash-red' : 'led-ring flash-orange';
-    }
+    ring.className = (closestAheadRadar.type === 'MÓVIL') ? 
+      (isOverspeed ? 'led-ring flash-red' : 'led-ring flash-blue') : 
+      (isOverspeed ? 'led-ring flash-red' : 'led-ring flash-orange');
 
     document.getElementById('alertTitle').innerText = `⚠️ ${closestAheadRadar.type} A ${distRounded}m`;
     document.getElementById('alertSub').innerText = closestAheadRadar.name;
@@ -700,64 +597,51 @@ function checkProximityAlerts() {
     }
 
     const lastAlert = alertedIds.get(closestAheadRadar.id) || 0;
-    if (now - lastAlert > 85000) {
-      alertedIds.set(closestAheadRadar.id, now);
-      const limitStr = closestAheadRadar.vmax > 0 ? `, límite ${closestAheadRadar.vmax}` : '';
-      const pattern = isOverspeed ? 'OVERSPEED' : 'RADAR';
-      speakAlert(`Atención, radar ${closestAheadRadar.type.toLowerCase()} a ${distRounded} metros${limitStr}`, pattern);
+    if (Date.now() - lastAlert > 85000) {
+      alertedIds.set(closestAheadRadar.id, Date.now());
+      speakAlert(`Atención, radar ${closestAheadRadar.type.toLowerCase()} a ${distRounded} metros`, isOverspeed ? 'OVERSPEED' : 'RADAR');
     }
     return;
   }
 
-  // 2. ALERTA DE HELICÓPTERO DE TRÀNSIT / PEGASUS
   if (closestHeli && minHeliDist <= 4500) {
     const kmDist = (minHeliDist / 1000).toFixed(1);
     ring.className = 'led-ring flash-purple';
     badge.style.display = 'none';
     document.getElementById('alertTitle').innerText = `🚁 HELICÓPTERO A ${kmDist} KM`;
-    document.getElementById('alertSub').innerText = `Alt: ${closestHeli.alt}m | Vel: ${closestHeli.speed} km/h (${closestHeli.callsign})`;
+    document.getElementById('alertSub').innerText = `Alt: ${closestHeli.alt}m | Vel: ${closestHeli.speed} km/h`;
 
-    const lastHeliAlert = alertedIds.get(closestHeli.id) || 0;
-    if (now - lastHeliAlert > 120000) {
-      alertedIds.set(closestHeli.id, now);
-      speakAlert(`Alerta aérea. Helicóptero detectado a ${kmDist} kilómetros, altitud ${closestHeli.alt} metros.`, 'HELI');
+    if (Date.now() - (alertedIds.get(closestHeli.id) || 0) > 120000) {
+      alertedIds.set(closestHeli.id, Date.now());
+      speakAlert(`Alerta aérea. Helicóptero detectado a ${kmDist} kilómetros.`, 'HELI');
     }
     return;
   }
 
-  // 3. RUTA DESPEJADA
   ring.className = 'led-ring';
   badge.style.display = 'none';
-  if (closestAheadRadar && minAheadDist < 12000) {
-    document.getElementById('alertTitle').innerText = 'Ruta Despejada';
-    document.getElementById('alertSub').innerText = `Próximo en ruta: ${(minAheadDist / 1000).toFixed(1)} km (${closestAheadRadar.name})`;
-  } else {
+  if (closestAheadRadar && minAheadDist < 15000) {
     document.getElementById('alertTitle').innerText = 'Ruta Vigilada';
-    document.getElementById('alertSub').innerText = 'Sin radares ni helicópteros próximos en tu sentido';
+    document.getElementById('alertSub').innerText = `Próximo: ${(minAheadDist / 1000).toFixed(1)} km (${closestAheadRadar.name})`;
+  } else {
+    document.getElementById('alertTitle').innerText = 'Ruta Protegida';
+    document.getElementById('alertSub').innerText = `Analizando ${activePois.length} radares en tu zona`;
   }
 }
 
-/**
- * ============================================================================
- * 7. REPORTES CON UN TOQUE, MODO BOLSILLO Y GEOMETRÍA GPS
- * ============================================================================
- */
 function reportIncident(type, label) {
   if (!systemRunning) startSystem();
   const newPoi = {
     id: 'usr-' + Date.now(),
-    lat: userLat,
-    lon: userLon,
+    lat: userLat, lon: userLon,
     vmax: currentSpeed > 20 ? Math.round(currentSpeed / 10) * 10 : 80,
-    type: type,
-    name: `${label} (Reportado en Ruta)`,
-    ts: Date.now()
+    type: type, name: `${label} (Reportado)`, ts: Date.now()
   };
   customReports.push(newPoi);
   localStorage.setItem('ooono_custom_reports', JSON.stringify(customReports));
   activePois.push(newPoi);
   updateCounterUI();
-  speakAlert(`${label} guardado en este punto.`, type === 'HELI' ? 'HELI' : 'RADAR');
+  speakAlert(`${label} guardado.`, type === 'HELI' ? 'HELI' : 'RADAR');
 }
 
 function testIntercomAudio() {
@@ -766,7 +650,7 @@ function testIntercomAudio() {
   ring.className = 'led-ring flash-red';
   document.getElementById('limitBadge').style.display = 'flex';
   document.getElementById('limitBadge').innerText = '80';
-  speakAlert('Prueba de casco. Radar móvil a 300 metros, límite 80.', 'RADAR');
+  speakAlert('Prueba de casco. Radar móvil a 300 metros.', 'RADAR');
   setTimeout(() => { ring.className = 'led-ring'; }, 4000);
 }
 
@@ -785,16 +669,12 @@ function calcDistance(lat1, lon1, lat2, lon2) {
   const R = 6371000;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
 function calcBearing(lat1, lon1, lat2, lon2) {
-  const φ1 = lat1 * Math.PI / 180;
-  const φ2 = lat2 * Math.PI / 180;
-  const Δλ = (lon2 - lon1) * Math.PI / 180;
+  const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180, Δλ = (lon2 - lon1) * Math.PI / 180;
   const y = Math.sin(Δλ) * Math.cos(φ2);
   const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
   return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
