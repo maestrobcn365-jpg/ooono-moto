@@ -9,8 +9,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>OOONO Moto CAT Pro</title>
 
-<!-- MANIFIESTO PWA PARA INSTALAR COMO APP NATIVA -->
-<link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;OOONO Moto CAT Pro&quot;,&quot;short_name&quot;:&quot;OOONO Moto&quot;,&quot;start_url&quot;:&quot;./index.html&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#000000&quot;,&quot;theme_color&quot;:&quot;#000000&quot;,&quot;orientation&quot;:&quot;portrait&quot;}">
+<!-- MANIFIESTO PWA OBLIGATORIO -->
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22OOONO%20Moto%20CAT%20Pro%22%2C%22short_name%22%3A%22OOONO%20Moto%22%2C%22start_url%22%3A%22.%2Findex.html%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%23000000%22%2C%22orientation%22%3A%22portrait%22%7D">
 
 <style>
   :root {
@@ -69,6 +69,22 @@
   }
   .dot.active { background: #10b981; box-shadow: 0 0 8px #10b981; }
   .dot.warn { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+
+  /* Botón de instalación directo que aparece arriba si no está instalada */
+  #installBtn {
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: #ffffff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 11px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  }
 
   .ooono-wrapper {
     flex: 1;
@@ -222,7 +238,8 @@
       <div id="statusDot" class="dot"></div>
       <span id="statusText">Toca el centro para iniciar</span>
     </div>
-    <div id="dbCounter" style="color:#9ca3af; font-weight:600;">📍 0 | 🚁 0</div>
+    <button id="installBtn" onclick="triggerInstall()">📲 INSTALAR</button>
+    <div id="dbCounter" style="color:#9ca3af; font-weight:600;">📍 0</div>
   </div>
 
   <div class="ooono-wrapper">
@@ -237,8 +254,8 @@
   </div>
 
   <div class="alert-box">
-    <div id="alertTitle" class="alert-title">App Instalable Lista</div>
-    <div id="alertSub" class="alert-sub">Instálala en la pantalla de inicio para evitar silencios</div>
+    <div id="alertTitle" class="alert-title">Sistema de Audio y GPS</div>
+    <div id="alertSub" class="alert-sub">Pulsa INSTALAR arriba para app independiente</div>
   </div>
 
   <div class="actions-grid">
@@ -257,6 +274,24 @@
   </div>
 
 <script>
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBtn').style.display = 'flex';
+});
+
+async function triggerInstall() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      document.getElementById('installBtn').style.display = 'none';
+    }
+    deferredPrompt = null;
+  }
+}
+
 const CATALUNYA_STATIC_RADARS = [
   { id: 'bcn-1', lat: 41.4162, lon: 2.1592, vmax: 60, type: 'TRAMO', name: 'Túnel de la Rovira' },
   { id: 'bcn-2', lat: 41.3789, lon: 2.1281, vmax: 60, type: 'TRAMO', name: 'Túnel de Badal' },
@@ -310,7 +345,6 @@ function initAudioEngine() {
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
-  // Mantiene vivo el canal Bluetooth del casco permanentemente
   setInterval(() => {
     if (!systemRunning || !audioCtx) return;
     try {
@@ -660,7 +694,7 @@ function togglePocketMode() {
 }
 
 function updateCounterUI() {
-  document.getElementById('dbCounter').innerText = `📍 ${activePois.length} | 🚁 ${activeHelis.length}`;
+  document.getElementById('dbCounter').innerText = `📍 ${activePois.length}`;
 }
 
 function calcDistance(lat1, lon1, lat2, lon2) {
